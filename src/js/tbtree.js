@@ -113,7 +113,7 @@ var tbtree = (function ($, _) {
       segments.push($(li).attr('data-path'));
     });
     var fullPath = segments.reverse().join('/');
-    bus.publish('selected', fullPath);
+    bus.publish('selected', {path: fullPath});
   };
 
   var toggleExpandState = function ($li) {
