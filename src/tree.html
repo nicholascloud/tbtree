@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title>Tree</title>
+    <link type="text/css" rel="stylesheet" href="lib/bootstrap/css/bootstrap.css" />
+    <link type="text/css" rel="stylesheet" href="lib/bootstrap/css/bootstrap-responsive.css" />
+    <link type="text/css" rel="stylesheet" href="css/tbtree.css" />
+    <style type="text/css">
+      body {
+        padding:2em;
+      }
+      #centerme {
+        width:900px;
+        margin:auto;
+      }
+      #filter {
+        width:99%;
+      }
+      #tv-shows {
+        border:1px solid silver;
+        padding:1em;
+      }
+    </style>
+  </head>
+  <body>
+
+    <div id="centerme">
+      <h2>Tree View</h2>
+      <form>
+        <input type="search" id="filter" placeholder="filter" />
+      </form>
+      <div id="tv-shows"></div>
+    </div>
+
+    <script type="text/javascript" src="lib/jquery-1.7.2.js"></script>
+    <script type="text/javascript" src="lib/underscore.js"></script>
+    <script type="text/javascript" src="lib/bootstrap/js/bootstrap.js"></script>
+    <script type="text/javascript" src="js/data.js"></script>
+    <script type="text/javascript" src="js/tbtree.js"></script>
+    <script type="text/javascript">
+      $().ready(function () {
+        window.tbtree('#tv-shows').load(window.tvShows);
+      });
+    </script>
+  </body>
+</html>

@@ -1,0 +1,65 @@
+.tbtree ul {
+  list-style:none;
+  cursor:default;
+}
+.tbtree > ul {
+  margin:0;
+}
+.tbtree a {
+  color:inherit;
+  text-decoration:none;
+}
+.tbtree li {
+  margin:0.5em 0;
+  width:100%;
+  padding-right:2em;
+  cursor:default;
+  position:relative;
+  word-wrap:break-word;
+}
+.tbtree li i:first-of-type {
+  position:absolute;
+  top:0.3em;
+  left:0;
+}
+.tbtree li i:last-of-type {
+  position:absolute;
+  top:0.3em;
+  right:2em;
+}
+.tbtree li span.label {
+  margin-right:0.8em;
+}
+.tbtree li a {
+  cursor:default;
+  display:block;
+  margin:0 2em;
+  padding:0.3em;
+}
+.tbtree li a:hover {
+  background-color:#08C;
+  color:white;
+  border-radius:0.4em;
+}
+.tbtree li.selected > a {
+  background-color:#08C;
+  color:white;
+  border-radius:0.4em;
+}
+.tbtree li.branch {
+  cursor:pointer;
+}
+.tbtree li.branch > a {
+  cursor:pointer;
+}
+.tbtree li > .icon-chevron-right,
+.tbtree li > .icon-chevron-down,
+.tbtree li > .icon-file {
+  margin-right:1em;
+}
+.tbtree li > .icon-file {
+  margin-top:-0.1em;
+}
+.tbtree li > i.icon-star {
+  float:right;
+}
