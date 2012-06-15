@@ -69,3 +69,6 @@ $('#book-tree').on('click', 'li', function (e) {
 });
 ```
 
+## Screenshots ##
+
+![vanity shot](vanity-shot.png)
