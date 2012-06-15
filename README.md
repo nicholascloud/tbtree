@@ -71,4 +71,4 @@ $('#book-tree').on('click', 'li', function (e) {
 
 ## Screenshots ##
 
-![vanity shot](vanity-shot.png)
+![vanity shot](tbtree/vanity-shot.png)
