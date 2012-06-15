@@ -10,6 +10,14 @@ __WARNING__:This plugin is very much "alpha" and contains a number of hard-coded
 - jQuery
 - underscore.js
 
+## Features ##
+
+- displays data from an object literal as an expandable/collapsable tree
+- fires a custom event whenever a list item is clicked
+- looks like a Twitter Bootstrap control!
+
+More features coming soon.
+
 ## Usage ##
 
 Assuming you have some data in a regular object literal structure:
