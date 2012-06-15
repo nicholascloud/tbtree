@@ -25,7 +25,7 @@ var books = {
     {
       title: "Ender's Game",
       author: 'Orson Scott Card',
-      rating: '5/5
+      rating: '5/5'
     }
   ]
 }
