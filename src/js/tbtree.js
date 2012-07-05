@@ -106,14 +106,14 @@ define(['jquery', 'underscore'], function ($, _) {
     }
   };
 
-  var triggerSelectedEvent = function ($li) {
+  var triggerPathEvent = function ($li, evt) {
     var segments = [];
     segments.push($li.attr('data-path'));
     $li.parents('li').each(function (i, li) {
       segments.push($(li).attr('data-path'));
     });
     var fullPath = segments.reverse().join('/');
-    bus.publish('selected', {path: fullPath});
+    bus.publish(evt, {path: fullPath});
   };
 
   var toggleExpandState = function ($li) {
@@ -141,12 +141,24 @@ define(['jquery', 'underscore'], function ($, _) {
 
       $E.on('click', 'li', function (e) {
         var $li = $(this);
-        $E.find('li').removeClass('selected');
-        $li.addClass('selected');
-        triggerSelectedEvent($li);
-        toggleExpandState($li);
+        setTimeout(function () {
+          var dblclick = parseInt($li.data('double'), 10);
+          if (dblclick > 0) {
+            $li.data('double', dblclick - 1);
+            return;
+          }
+          $E.find('li').removeClass('highlighted');
+          $li.addClass('highlighted');
+          triggerPathEvent($li, 'highlighted');
+          toggleExpandState($li);
+        }, 200);
+        return false;
+      });
 
-        e.stopPropagation();
+      $E.on('dblclick', 'li', function (e) {
+        var $li = $(this);
+        $li.data('double', 2);
+        triggerPathEvent($li, 'selected');
         return false;
       });
 

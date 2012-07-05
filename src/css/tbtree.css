@@ -41,7 +41,7 @@
   color:white;
   border-radius:0.4em;
 }
-.tbtree li.selected > a {
+.tbtree li.highlighted > a {
   background-color:#08C;
   color:white;
   border-radius:0.4em;
