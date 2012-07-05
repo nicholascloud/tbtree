@@ -1,6 +1,6 @@
-/*global window:true, jQuery:true, _:true*/
+/*global define:true*/
 
-var tbtree = (function ($, _) {
+define(['jquery', 'underscore'], function ($, _) {
   'use strict';
 
   var bus = (function () {
@@ -182,6 +182,6 @@ var tbtree = (function ($, _) {
     return api;
   };
 
-}(this.jQuery, this._));
+});
 
 
