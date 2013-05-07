@@ -1,0 +1,9 @@
+{
+  "name": "tbtree",
+  "author": "Nicholas Cloud",
+  "version": "0.2.0",
+  "dependencies": {
+    "jake": "latest",
+    "async": "latest"
+  }
+}

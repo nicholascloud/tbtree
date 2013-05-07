@@ -1,5 +1,28 @@
+/**
+ * The MIT License (MIT)
+ *
+ * tbtree 0.2.0 Copyright (c) 2013 Nicholas Cloud
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+ * THE SOFTWARE.
+ */
 /*global define:true*/
-
+/* jshint forin:false */
 define(['jquery', 'underscore'], function ($, _) {
   'use strict';
 
@@ -50,11 +73,11 @@ define(['jquery', 'underscore'], function ($, _) {
           e.apply(context || null, args);
         });
       }
-    }
+    };
   }());
 
-  $.fn.toggleClass = function (a, b) {
-    this.each(function () {
+  function toggleClass($e, a, b) {
+    $e.each(function () {
       var $this = $(this);
       if ($this.hasClass(a)) {
         $this.removeClass(a).addClass(b);
@@ -64,7 +87,7 @@ define(['jquery', 'underscore'], function ($, _) {
         $this.addClass(a);
       }
     });
-  };
+  }
 
   var config = {
     icons: {
@@ -74,7 +97,7 @@ define(['jquery', 'underscore'], function ($, _) {
     }
   };
 
-  var buildTree = function (obj, $parent) {
+  function buildTree(obj, $parent) {
     var $ul = $('<ul></ul>')
       .appendTo($parent);
     for (var p in obj) {
@@ -104,9 +127,9 @@ define(['jquery', 'underscore'], function ($, _) {
       }
       $li.find('> ul').hide();
     }
-  };
+  }
 
-  var triggerPathEvent = function ($li, evt) {
+  function triggerPathEvent($li, evt) {
     var segments = [];
     segments.push($li.attr('data-path'));
     $li.parents('li').each(function (i, li) {
@@ -114,9 +137,9 @@ define(['jquery', 'underscore'], function ($, _) {
     });
     var fullPath = segments.reverse().join('/');
     bus.publish(evt, {path: fullPath});
-  };
+  }
 
-  var toggleExpandState = function ($li) {
+  function toggleExpandState($li) {
     var state = $li.attr('data-state');
     if (state === 'expanded') {
       $li.find('> ul').hide();
@@ -131,7 +154,7 @@ define(['jquery', 'underscore'], function ($, _) {
         .addClass(config.icons.expanded);
       $li.attr('data-state', 'expanded');
     }
-  };
+  }
 
   var api = {
     load: function (data) {
@@ -163,7 +186,7 @@ define(['jquery', 'underscore'], function ($, _) {
       });
 
       $E.on('click', 'i.icon-lock, i.icon-unlock', function (e) {
-        $(this).toggleClass('icon-lock', 'icon-unlock');
+        toggleClass($(this), 'icon-lock', 'icon-unlock');
         e.stopPropagation();
         e.preventDefault();
         return false;
