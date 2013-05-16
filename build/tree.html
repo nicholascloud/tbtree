@@ -33,7 +33,26 @@
       <div id="tv-shows"></div>
     </div>
 
+    <!-- load the data... yes, it is a global object -->
     <script src="scripts/tvshows.js"></script>
+
+    <!-- with require.js -->
     <script src="lib/require-2.1.5.js" data-main="scripts/main"></script>
+
+    <!-- without require.js -->
+    <!--
+    <script src="lib/jquery-1.9.1.js"></script>
+    <script src="lib/underscore-1.4.4.js"></script>
+    <script src="scripts/tbtree.js"></script>
+    <script>
+      $().ready(function () {
+        window.tree = tbtree('#tv-shows');
+        window.tree.load(window.tvShows);
+        window.tree.on('highlighted', function (e) {
+          console.log(e);
+        });
+      });
+    </script>
+    -->
   </body>
 </html>

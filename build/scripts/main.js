@@ -14,6 +14,10 @@ requirejs.config({
 require(['jquery', 'tbtree'], function ($, tbtree) {
   'use strict';
   $().ready(function () {
-    tbtree('#tv-shows').load(window.tvShows);
+    window.tree = tbtree('#tv-shows');
+    window.tree.load(window.tvShows);
+    window.tree.on('highlighted', function (e) {
+      console.log(e);
+    });
   });
 });

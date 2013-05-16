@@ -9,6 +9,7 @@ __WARNING__:This plugin is very much "alpha" and contains a number of hard-coded
 - Twitter Bootstrap
 - jQuery
 - underscore.js
+- require.js (optional)
 
 ## Features ##
 
@@ -51,13 +52,14 @@ the tree is initialized in code (probably in a jquery `ready()` callback) like t
 var tree = tbtree('#book-tree').load(books);
 ```
 
-The only event currently supported is 'selected', which may be subscribed to like this:
+The only event currently supported is 'highlighted', which may be subscribed to like this:
 
 ```javascript
-tree.on('selected', function (e) {
+tree.on('highlighted', function (e) {
   // where 'e' is a custom object
   // that will have some data related
   // to the list item that was selected
+  console.log(e.path);
 });
 ```
 

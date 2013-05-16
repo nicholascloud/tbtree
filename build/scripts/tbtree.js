@@ -1,7 +1,7 @@
 /**
  * The MIT License (MIT)
  *
- * tbtree 0.2.0 Copyright (c) 2013 Nicholas Cloud
+ * tbtree 0.3.0 Copyright (c) 2013 Nicholas Cloud
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -21,9 +21,22 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-/*global define:true*/
-/* jshint forin:false */
-define(['jquery', 'underscore'], function ($, _) {
+/*global require, define, module*/
+/*jshint forin:false*/
+(function (global, factory) {
+  'use strict';
+
+  // AMD (require.js) module
+  if (typeof define === 'function' && define.amd) {
+    return define(['jquery', 'underscore'], function ($, _) {
+      return factory($, _, global);
+    });
+  }
+
+  // browser
+  global.tbtree = factory(global.$, global._, global);
+
+}(this, function ($, _, global, undefined) {
   'use strict';
 
   var bus = (function () {
@@ -37,40 +50,29 @@ define(['jquery', 'underscore'], function ($, _) {
         subscriptions[event].push(callback);
       },
       unsubscribe: function (event, callback) {
-        if (!this.hasSubscriptions(event)) {
+        if (!_.has(subscriptions, event)) {
+          return;
+        }
+        if (!callback) {
+          subscriptions[event] = [];
           return;
         }
         subscriptions[event] = _.without(subscriptions[event], callback);
       },
-      unsubscribeAll: function (callback) {
-        var _this = this;
-        this.subscribedEvents(callback).forEach(function (e) {
-          _this.unsubscribe(e, callback);
-        });
-      },
-      hasSubscriptions: function (event) {
-        if (!event) {
-          return Object.keys(subscriptions).length > 0;
-        }
-        return subscriptions.hasOwnProperty(event) &&
-          subscriptions[event].length > 0;
-      },
-      subscribedEvents: function (callback) {
-        var subscribedEvents = [];
-        Object.keys(subscriptions).forEach(function (key) {
-          if (subscriptions[key].indexOf(callback) > -1) {
-            subscribedEvents.push(key);
-          }
-        });
-        return _.uniq(subscribedEvents).sort();
-      },
-      publish: function (event, context) {
-        if (!this.hasSubscriptions(event)) {
+      publish: function (event, message, context) {
+        if (!_.has(subscriptions, event)) {
           return;
         }
-        var args = Array.prototype.slice.call(arguments, 1);
+        var meta = {
+          __event__: {
+            name: event,
+            subscribers: subscriptions[event].length
+          }
+        };
+        context = context || {};
+        message = _.extend(meta, message);
         subscriptions[event].forEach(function (e) {
-          e.apply(context || null, args);
+          e.call(context, message);
         });
       }
     };
@@ -97,36 +99,33 @@ define(['jquery', 'underscore'], function ($, _) {
     }
   };
 
-  function buildTree(obj, $parent) {
+  function buildTree(json, $parent) {
     var $ul = $('<ul></ul>')
       .appendTo($parent);
-    for (var p in obj) {
-      if (!obj.hasOwnProperty(p)) {
-        continue;
-      }
-      var value = obj[p];
+
+    _.each(json, function (value, key) {
       var $li = $('<li></li>')
         .append('<i></i>')
         .append('<a></a>')
         .append('<i class="icon-lock"></i>')
-        .attr('data-path', p)
+        .attr('data-path', key)
         .attr('data-state', 'collapsed')
         .appendTo($ul);
       if (_.isObject(value)) {
         $li.addClass('branch');
-        $li.find('a').text(p);
+        $li.find('a').text(key);
         $li.find('i').first().addClass(config.icons.collapsed);
         buildTree(value, $li);
       } else {
         $li.addClass('leaf');
         $li.find('a')
-          .append('<span class="label label-inverse">' + p + '</span>')
+          .append('<span class="label label-inverse">' + key + '</span>')
           .find('span')
-          .after(obj[p]);
+          .after(value);
         $li.find('i').first().addClass(config.icons.leaf);
       }
       $li.find('> ul').hide();
-    }
+    });
   }
 
   function triggerPathEvent($li, evt) {
@@ -157,36 +156,59 @@ define(['jquery', 'underscore'], function ($, _) {
   }
 
   var api = {
+    _$el: null,
+    _data: {},
     load: function (data) {
-      var $E = $(config.selector).addClass('tbtree');
+      if (this._$el) {
+        this._$el.remove();
+      }
 
-      buildTree(data, $E);
+      this._$el = $(config.selector).addClass('tbtree');
+      this._data = data;
 
-      $E.on('click', 'li', function (e) {
+      buildTree(this._data, this._$el);
+
+      var self = this;
+      this._$el.on('click', 'li', function (/*e*/) {
         var $li = $(this);
+        /**
+         * Use the timeout delay to allow the `dblclick` event
+         * to fire (it fires after `click`). If `dblclick` fires,
+         * it will add a `double` entry to the DOM element's data
+         * that will have a value of `1`. The first `click` handler
+         * that fires will decrement this value and return, and the
+         * second `click` handler that fires will actually perform
+         * the DOM manipulation.
+         *
+         * Order of events when the user double-clicks:
+         * - click
+         * - click
+         * - dblclick
+         */
         setTimeout(function () {
-          var dblclick = parseInt($li.data('double'), 10);
+          var dblclick = parseInt($li.data('double') || 0, 10);
           if (dblclick > 0) {
             $li.data('double', dblclick - 1);
             return;
           }
-          $E.find('li').removeClass('highlighted');
+          self._$el.find('li').removeClass('highlighted');
           $li.addClass('highlighted');
           triggerPathEvent($li, 'highlighted');
           toggleExpandState($li);
-        }, 200);
+        }, 0);
         return false;
       });
 
-      $E.on('dblclick', 'li', function (e) {
+      this._$el.on('dblclick', 'li', function (/*e*/) {
         var $li = $(this);
-        $li.data('double', 2);
+        $li.data('double', 1);
         triggerPathEvent($li, 'selected');
         return false;
       });
 
-      $E.on('click', 'i.icon-lock, i.icon-unlock', function (e) {
-        toggleClass($(this), 'icon-lock', 'icon-unlock');
+      this._$el.on('click', 'i.icon-lock, i.icon-unlock', function (e) {
+        var $i = $(this);
+        toggleClass($i, 'icon-lock', 'icon-unlock');
         e.stopPropagation();
         e.preventDefault();
         return false;
@@ -195,9 +217,8 @@ define(['jquery', 'underscore'], function ($, _) {
       return this;
     },
 
-    filter: function (query) {
-      console.log(query);
-      return this;
+    filter: function (/*query*/) {
+      throw new Error('`filter` is not implemented');
     },
 
     on: function (evt, callback) {
@@ -217,6 +238,6 @@ define(['jquery', 'underscore'], function ($, _) {
     return api;
   };
 
-});
+}));
 
 
