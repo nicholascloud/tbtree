@@ -52,16 +52,23 @@ the tree is initialized in code (probably in a jquery `ready()` callback) like t
 var tree = tbtree('#book-tree').load(books);
 ```
 
-The only event currently supported is 'highlighted', which may be subscribed to like this:
+Events may be subscribed to like this:
 
 ```javascript
-tree.on('highlighted', function (e) {
+tree.on('selected', function (e) {
   // where 'e' is a custom object
   // that will have some data related
   // to the list item that was selected
   console.log(e.path);
 });
 ```
+
+The following events are currently supported:
+
+- `loaded`: occurs when the tree has been loaded with data
+- `selected`: occurs when a node has been clicked on the tree
+- `collapsed`: occurs when a node has been collapsed
+- `expanded`: occurs when a node has been expanded
 
 Of course, you can always subscribe to events via jQuery like normal:
 

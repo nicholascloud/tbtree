@@ -39,45 +39,101 @@
 }(this, function ($, _, global, undefined) {
   'use strict';
 
-  var bus = (function () {
-    var subscriptions = {};
+  /**
+   * Default context object for bus events
+   * @type {{}}
+   */
+  var DEFAULT_CONTEXT = {};
 
-    return {
-      subscribe: function (event, callback) {
-        if (!subscriptions.hasOwnProperty(event)) {
-          subscriptions[event] = [];
-        }
-        subscriptions[event].push(callback);
-      },
-      unsubscribe: function (event, callback) {
-        if (!_.has(subscriptions, event)) {
-          return;
-        }
-        if (!callback) {
-          subscriptions[event] = [];
-          return;
-        }
-        subscriptions[event] = _.without(subscriptions[event], callback);
-      },
-      publish: function (event, message, context) {
-        if (!_.has(subscriptions, event)) {
-          return;
-        }
-        var meta = {
-          __event__: {
-            name: event,
-            subscribers: subscriptions[event].length
-          }
-        };
-        context = context || {};
-        message = _.extend(meta, message);
-        subscriptions[event].forEach(function (e) {
-          e.call(context, message);
-        });
+  /**
+   * Simple message bus API for eventing; only used internally
+   * @type {{subscribe: Function, unsubscribe: Function, publish: Function}}
+   */
+  var busAPI = {
+    // subscriptions: {},
+
+    /**
+     * Subscribes to an event on the bus
+     * @param {String} event
+     * @param {Function} callback
+     * @param {Object} [context]
+     */
+    subscribe: function (event, callback, context) {
+      if (!this.subscriptions.hasOwnProperty(event)) {
+        this.subscriptions[event] = [];
       }
-    };
-  }());
+      if (!callback) {
+        throw new Error('callback was not supplied');
+      }
+      this.subscriptions[event].push({
+        callback: callback,
+        context: context || DEFAULT_CONTEXT
+      });
+    },
 
+    /**
+     * Unsubscribes to an/all event(s) on the bus
+     * @param {String} [event]
+     * @param {Function} [callback]
+     * @param {Object} [context]
+     */
+    unsubscribe: function (event, callback, context) {
+      if (arguments.length === 0) {
+        this.subscriptions = {};
+        return;
+      }
+      if (!_.has(this.subscriptions, event)) {
+        return;
+      }
+      if (arguments.length === 1) {
+        this.subscriptions[event] = [];
+        return;
+      }
+      context = context || DEFAULT_CONTEXT;
+      this.subscriptions[event] = _.filter(this.subscriptions, function (s) {
+        return s.callback !== callback && s.context !== context;
+      });
+    },
+
+    /**
+     * Publishes an event on the bus
+     * @param {String} event
+     * @param {Object} message
+     */
+    publish: function (event, message) {
+      if (!_.has(this.subscriptions, event)) {
+        return;
+      }
+      var meta = {
+        __meta__: {
+          name: event,
+          subscribers: this.subscriptions[event].length
+        }
+      };
+      message = _.extend(meta, message);
+      this.subscriptions[event].forEach(function (s) {
+        s.callback.call(s.context, message);
+      });
+    }
+  };
+
+  /**
+   * Message bus constructor
+   * @returns {Object}
+   * @constructor
+   */
+  function Bus() {
+    var bus = Object.create(busAPI);
+    bus.subscriptions = {};
+    return bus;
+  }
+
+  /**
+   * Toggles classes on a jQuery object
+   * @param {jQuery} $e jQuery object
+   * @param {String} a class name
+   * @param {String} b class name
+   */
   function toggleClass($e, a, b) {
     $e.each(function () {
       var $this = $(this);
@@ -91,82 +147,146 @@
     });
   }
 
-  var config = {
+  /**
+   * Default tree configuration
+   * @type {{icons: {expanded: string, collapsed: string, leaf: string, positive: string, negative: string}}}
+   */
+  var DEFAULT_TREE_CONFIG = {
     icons: {
       expanded: 'icon-chevron-down',
       collapsed: 'icon-chevron-right',
-      leaf: 'icon-file'
-    }
+      leaf: 'icon-file',
+      positive: 'icon-unlock',
+      negative: 'icon-lock'
+    },
+    arrayValuesInPath: true
   };
 
-  function buildTree(json, $parent) {
-    var $ul = $('<ul></ul>')
-      .appendTo($parent);
+  /**
+   * Tree API
+   * @type {{_buildTree: Function, _triggerPathEvent: Function, _toggleExpandState: Function, load: Function, filter: Function, on: Function, off: Function}}
+   */
+  var treeAPI = {
+    // _$el: null,
+    // _data: {},
+    // _bus: new Bus(),
 
-    _.each(json, function (value, key) {
-      var $li = $('<li></li>')
-        .append('<i></i>')
-        .append('<a></a>')
-        .append('<i class="icon-lock"></i>')
-        .attr('data-path', key)
-        .attr('data-state', 'collapsed')
-        .appendTo($ul);
-      if (_.isObject(value)) {
-        $li.addClass('branch');
-        $li.find('a').text(key);
-        $li.find('i').first().addClass(config.icons.collapsed);
-        buildTree(value, $li);
+    /**
+     * Builds a DOM tree of nested lists
+     * @param {Object} json
+     * @param {jQuery} $parent
+     * @private
+     */
+    _buildTree: function (json, $parent) {
+      var $ul = $('<ul></ul>')
+        .appendTo($parent);
+
+      var self = this;
+      _.each(json, function (value, key) {
+        var $li = $('<li></li>')
+          .append('<i></i>')
+          .append('<a></a>')
+          .append('<i></i>')
+          .attr('data-path', key)
+          .attr('data-state', 'collapsed')
+          .appendTo($ul);
+
+        /*
+         * By default array values are shown in the path where
+         * possible. If an array value is itself an object or
+         * another array, the key will be shown instead. Setting
+         * `arrayValuesInPath` to false in the config will always
+         * show the array key in the path.
+         */
+        if (_.isArray(json) && self._config.arrayValuesInPath) {
+          if (!_.isObject(value) && !_.isArray(value)) {
+            $li.attr('data-path', value);
+          }
+        }
+
+        $li.find('i').last().addClass(self._icons.negative);
+
+        if (_.isObject(value)) {
+          // branch
+          $li.addClass('branch');
+          $li.find('a').text(key);
+          $li.find('i').first().addClass(self._icons.collapsed);
+          self._buildTree(value, $li);
+        } else {
+          // leaf
+          $li.addClass('leaf');
+          $li.find('a')
+            .append('<span class="label label-inverse">' + key + '</span>')
+            .find('span')
+            .after(value);
+          $li.find('i').first().addClass(self._icons.leaf);
+        }
+
+        $li.find('> ul').hide();
+      });
+    },
+
+    /**
+     * Triggers a path event when a list item is clicked
+     * @param {jQuery} $li list item that was clicked
+     * @param {String} evt event name to publish
+     * @private
+     */
+    _triggerPathEvent: function ($li, evt) {
+      var segments = [];
+      segments.push($li.attr('data-path'));
+      $li.parents('li').each(function (i, li) {
+        segments.push($(li).attr('data-path'));
+      });
+      var fullPath = segments.reverse().join('/');
+      this._bus.publish(evt, {
+        path: fullPath,
+        target: $li[0]
+      });
+    },
+
+    /**
+     * Toggles the expand state of a list item when it is clicked
+     * @param {jQuery} $li
+     * @private
+     */
+    _toggleExpandState: function ($li) {
+      var state = $li.attr('data-state'),
+        eventArgs = {target: $li[0]};
+      if (state === 'expanded') {
+        $li.find('> ul').hide();
+        $li.find('> .' + this._icons.expanded)
+          .removeClass(this._icons.expanded)
+          .addClass(this._icons.collapsed);
+        $li.attr('data-state', 'collapsed');
+        this._bus.publish('collapsed', eventArgs);
       } else {
-        $li.addClass('leaf');
-        $li.find('a')
-          .append('<span class="label label-inverse">' + key + '</span>')
-          .find('span')
-          .after(value);
-        $li.find('i').first().addClass(config.icons.leaf);
+        $li.find('> ul').show();
+        $li.find('> .' + this._icons.collapsed)
+          .removeClass(this._icons.collapsed)
+          .addClass(this._icons.expanded);
+        $li.attr('data-state', 'expanded');
+        this._bus.publish('expanded', eventArgs);
       }
-      $li.find('> ul').hide();
-    });
-  }
+    },
 
-  function triggerPathEvent($li, evt) {
-    var segments = [];
-    segments.push($li.attr('data-path'));
-    $li.parents('li').each(function (i, li) {
-      segments.push($(li).attr('data-path'));
-    });
-    var fullPath = segments.reverse().join('/');
-    bus.publish(evt, {path: fullPath});
-  }
-
-  function toggleExpandState($li) {
-    var state = $li.attr('data-state');
-    if (state === 'expanded') {
-      $li.find('> ul').hide();
-      $li.find('> .' + config.icons.expanded)
-        .removeClass(config.icons.expanded)
-        .addClass(config.icons.collapsed);
-      $li.attr('data-state', 'collapsed');
-    } else {
-      $li.find('> ul').show();
-      $li.find('> .' + config.icons.collapsed)
-        .removeClass(config.icons.collapsed)
-        .addClass(config.icons.expanded);
-      $li.attr('data-state', 'expanded');
-    }
-  }
-
-  var api = {
-    _$el: null,
-    _data: {},
+    /**
+     * Loads data into the tree
+     * @param {Object|String} data
+     * @returns {*}
+     */
     load: function (data) {
       if (this._$el) {
         this._$el.remove();
       }
+      this._$el = $(this._config.selector).addClass('tbtree');
 
-      this._$el = $(config.selector).addClass('tbtree');
+      if (_.isString(data)) {
+        data = JSON.parse(data);
+      }
       this._data = data;
 
-      buildTree(this._data, this._$el);
+      this._buildTree(this._data, this._$el);
 
       var self = this;
       this._$el.on('click', 'li', function (/*e*/) {
@@ -193,8 +313,8 @@
           }
           self._$el.find('li').removeClass('highlighted');
           $li.addClass('highlighted');
-          triggerPathEvent($li, 'highlighted');
-          toggleExpandState($li);
+          self._triggerPathEvent($li, 'selected');
+          self._toggleExpandState($li);
         }, 0);
         return false;
       });
@@ -202,31 +322,68 @@
       this._$el.on('dblclick', 'li', function (/*e*/) {
         var $li = $(this);
         $li.data('double', 1);
-        triggerPathEvent($li, 'selected');
+        self._triggerPathEvent($li, 'selected');
         return false;
       });
 
-      this._$el.on('click', 'i.icon-lock, i.icon-unlock', function (e) {
+      var pos = this._icons.positive,
+        neg = this._icons.negative;
+
+      //e.g., 'i.pos-state, i.neg-state'
+      var statesSelector = 'i.' + pos + ', i.' + neg;
+
+      this._$el.on('click', statesSelector, function (e) {
         var $i = $(this);
-        toggleClass($i, 'icon-lock', 'icon-unlock');
+        toggleClass($i, pos, neg);
         e.stopPropagation();
         e.preventDefault();
         return false;
       });
 
+      this._bus.publish('loaded');
+
       return this;
     },
 
+    /**
+     * Filters the tree
+     * NOT IMPLEMENTED
+     */
     filter: function (/*query*/) {
       throw new Error('`filter` is not implemented');
     },
 
-    on: function (evt, callback) {
-      bus.subscribe(evt, callback);
+    /**
+     * Adds a callback subscription to a tree event
+     * @param {String} event
+     * @param {Function} callback
+     * @param {Object} [context]
+     * @returns {*}
+     */
+    on: function (event, callback, context) {
+      this._bus.subscribe(event, callback, context);
+      return this;
+    },
+
+    /**
+     * Removes a/all callback subscription(s) from a tree event
+     * @param {String} [event]
+     * @param {Function} [callback]
+     * @param {Object} [context]
+     * @returns {*}
+     */
+    off: function (event, callback, context) {
+      this._bus.unsubscribe(event, callback, context);
       return this;
     }
   };
 
+  /**
+   * Creates a tbtree instance with options
+   *
+   * @param {Object} options
+   * @returns {Object}
+   */
   return function (options) {
     if (typeof options === 'string') {
       options = {selector: options};
@@ -234,8 +391,15 @@
     if (!options.hasOwnProperty('selector')) {
       throw new Error('A selector must be specified');
     }
-    $.extend(config, options);
-    return api;
+
+    var tree = Object.create(treeAPI);
+    tree._$el = null;
+    tree._data = {};
+    tree._config = _.defaults(options, DEFAULT_TREE_CONFIG);
+    //convenience
+    tree._icons = tree._config.icons;
+    tree._bus = new Bus();
+    return tree;
   };
 
 }));

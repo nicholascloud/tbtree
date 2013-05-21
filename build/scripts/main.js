@@ -14,9 +14,18 @@ requirejs.config({
 require(['jquery', 'tbtree'], function ($, tbtree) {
   'use strict';
   $().ready(function () {
-    window.tree = tbtree('#tv-shows');
-    window.tree.load(window.tvShows);
-    window.tree.on('highlighted', function (e) {
+    window.tvShowTree = tbtree('#tvshows');
+    window.tvShowTree.on('loaded', function () {
+      console.log('TV show tree has data');
+    });
+    window.tvShowTree.load(window.tvshows);
+    window.tvShowTree.on('selected', function (e) {
+      console.log(e);
+    });
+
+    window.artistTree = tbtree('#artists');
+    window.artistTree.load(window.artists);
+    window.artistTree.on('expanded', function (e) {
       console.log(e);
     });
   });
