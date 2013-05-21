@@ -381,7 +381,7 @@
     tree._bus = new Bus();
     tree._data = {};
     tree._config = _.defaults(options, DEFAULT_TREE_CONFIG);
-    //convenience
+    //convenience config property
     tree._icons = tree._config.icons;
     return tree;
   };
