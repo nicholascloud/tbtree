@@ -209,14 +209,14 @@
      * @param {String} evt event name to publish
      * @private
      */
-    _triggerPathEvent: function ($li, evt) {
+    _triggerPathEvent: function ($li) {
       var segments = [];
       segments.push($li.attr('data-path'));
       $li.parents('li').each(function (i, li) {
         segments.push($(li).attr('data-path'));
       });
       var fullPath = segments.reverse().join('/');
-      this._bus.publish(evt, {
+      this._bus.publish('selected', {
         path: fullPath,
         target: $li[0]
       });
@@ -278,9 +278,16 @@
          * the DOM manipulation.
          *
          * Order of events when the user double-clicks:
-         * - click
-         * - click
-         * - dblclick
+         * - click1 -> handle
+         * - click2 -> handle
+         * - dblclick -> handle
+         *
+         * By using `setTimeout`, we can delay the click handlers:
+         * - click1
+         * - click2
+         * - dblclick -> handle
+         * - handle click1 (ignore)
+         * - handle click2
          */
         setTimeout(function () {
           var dblclick = parseInt($li.data('double') || 0, 10);
@@ -290,7 +297,7 @@
           }
           self._$el.find('li').removeClass('highlighted');
           $li.addClass('highlighted');
-          self._triggerPathEvent($li, 'selected');
+          self._triggerPathEvent($li);
           self._toggleExpandState($li);
         }, 0);
         return false;
@@ -371,11 +378,11 @@
 
     var tree = Object.create(treeAPI);
     tree._$el = null;
+    tree._bus = new Bus();
     tree._data = {};
     tree._config = _.defaults(options, DEFAULT_TREE_CONFIG);
     //convenience
     tree._icons = tree._config.icons;
-    tree._bus = new Bus();
     return tree;
   };
 

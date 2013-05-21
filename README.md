@@ -1,4 +1,4 @@
-# TBTree #
+# tbtree #
 
 A tree control for twitter bootstrap.
 
