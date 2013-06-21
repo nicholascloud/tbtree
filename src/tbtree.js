@@ -36,7 +36,7 @@
      * @param {Object} [context]
      */
     subscribe: function (event, callback, context) {
-      if (!this.subscriptions.hasOwnProperty(event)) {
+      if (!_.has(this.subscriptions, event)) {
         this.subscriptions[event] = [];
       }
       if (!callback) {
@@ -372,7 +372,7 @@
     if (typeof options === 'string') {
       options = {selector: options};
     }
-    if (!options.hasOwnProperty('selector')) {
+    if (!_.has(options, 'selector')) {
       throw new Error('A selector must be specified');
     }
 
