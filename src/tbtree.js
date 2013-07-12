@@ -359,6 +359,12 @@
     off: function (event, callback, context) {
       this._bus.unsubscribe(event, callback, context);
       return this;
+    },
+    
+    destroy: function () {
+      this._$el.off();
+      this._$el.removeClass('tbtree');
+      this._$el.html('');
     }
   };
 
