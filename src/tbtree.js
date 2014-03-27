@@ -36,7 +36,7 @@
      * @param {Object} [context]
      */
     subscribe: function (event, callback, context) {
-      if (!this.subscriptions.hasOwnProperty(event)) {
+      if (!_.has(this.subscriptions, event)) {
         this.subscriptions[event] = [];
       }
       if (!callback) {
@@ -359,6 +359,12 @@
     off: function (event, callback, context) {
       this._bus.unsubscribe(event, callback, context);
       return this;
+    },
+    
+    destroy: function () {
+      this._$el.off();
+      this._$el.removeClass('tbtree');
+      this._$el.html('');
     }
   };
 
@@ -372,7 +378,7 @@
     if (typeof options === 'string') {
       options = {selector: options};
     }
-    if (!options.hasOwnProperty('selector')) {
+    if (!_.has(options, 'selector')) {
       throw new Error('A selector must be specified');
     }
 
