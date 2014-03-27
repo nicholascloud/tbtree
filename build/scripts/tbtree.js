@@ -1,7 +1,7 @@
 /**
  * The MIT License (MIT)
  *
- * tbtree 0.3.0 Copyright (c) 2013 Nicholas Cloud
+ * tbtree 0.4.0 Copyright (c) 2014 Nicholas Cloud
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -59,7 +59,7 @@
      * @param {Object} [context]
      */
     subscribe: function (event, callback, context) {
-      if (!this.subscriptions.hasOwnProperty(event)) {
+      if (!_.has(this.subscriptions, event)) {
         this.subscriptions[event] = [];
       }
       if (!callback) {
@@ -232,14 +232,14 @@
      * @param {String} evt event name to publish
      * @private
      */
-    _triggerPathEvent: function ($li, evt) {
+    _triggerPathEvent: function ($li) {
       var segments = [];
       segments.push($li.attr('data-path'));
       $li.parents('li').each(function (i, li) {
         segments.push($(li).attr('data-path'));
       });
       var fullPath = segments.reverse().join('/');
-      this._bus.publish(evt, {
+      this._bus.publish('selected', {
         path: fullPath,
         target: $li[0]
       });
@@ -301,9 +301,16 @@
          * the DOM manipulation.
          *
          * Order of events when the user double-clicks:
-         * - click
-         * - click
-         * - dblclick
+         * - click1 -> handle
+         * - click2 -> handle
+         * - dblclick -> handle
+         *
+         * By using `setTimeout`, we can delay the click handlers:
+         * - click1
+         * - click2
+         * - dblclick -> handle
+         * - handle click1 (ignore)
+         * - handle click2
          */
         setTimeout(function () {
           var dblclick = parseInt($li.data('double') || 0, 10);
@@ -313,7 +320,7 @@
           }
           self._$el.find('li').removeClass('highlighted');
           $li.addClass('highlighted');
-          self._triggerPathEvent($li, 'selected');
+          self._triggerPathEvent($li);
           self._toggleExpandState($li);
         }, 0);
         return false;
@@ -375,6 +382,12 @@
     off: function (event, callback, context) {
       this._bus.unsubscribe(event, callback, context);
       return this;
+    },
+    
+    destroy: function () {
+      this._$el.off();
+      this._$el.removeClass('tbtree');
+      this._$el.html('');
     }
   };
 
@@ -388,17 +401,17 @@
     if (typeof options === 'string') {
       options = {selector: options};
     }
-    if (!options.hasOwnProperty('selector')) {
+    if (!_.has(options, 'selector')) {
       throw new Error('A selector must be specified');
     }
 
     var tree = Object.create(treeAPI);
     tree._$el = null;
+    tree._bus = new Bus();
     tree._data = {};
     tree._config = _.defaults(options, DEFAULT_TREE_CONFIG);
-    //convenience
+    //convenience config property
     tree._icons = tree._config.icons;
-    tree._bus = new Bus();
     return tree;
   };
 
