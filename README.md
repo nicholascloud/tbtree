@@ -1,5 +1,7 @@
 # tbtree #
 
+__NOTE:__ This is an unmaintained project that is quite old and out-of-date.
+
 A tree control for twitter bootstrap.
 
 __WARNING__:This plugin is very much "alpha" and contains a number of hard-coded things that will change over time.  Use at your own risk!
